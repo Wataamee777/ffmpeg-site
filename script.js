@@ -1,89 +1,118 @@
 const input = document.getElementById("fileInput");
 const tableBody = document.querySelector("#fileTable tbody");
+const convertBtn = document.getElementById("convertBtn");
 const autoDL = document.getElementById("autoDL");
 const notifySound = document.getElementById("notifySound");
 const zipDL = document.getElementById("zipDL");
-const convertBtn = document.getElementById("convertBtn");
 const ding = document.getElementById("ding");
 const dlDing = document.getElementById("dlDing");
 
-const MAX_SIZE = 1024*1024*1024; // 1GB
-const audioExtensions = ["mp3","aac","flac","wav","alac","wma","ogg","tta","tak"];
-const videoExtensions = ["mp4","mov","avi","mkv","webm","wmv","flv"];
-const imageExtensions = ["jpg","jpeg","png","gif","webp","bmp","tiff","ico","heic"];
+const audioExt = ["mp3","aac","flac","wav","alac","wma","ogg","tta","tak"];
+const videoExt = ["mp4","mov","avi","mkv","webm","wmv","flv"];
+const imageExt = ["jpg","jpeg","png","gif","webp","bmp","tiff","ico","heic"];
 
-let fileList = [];
+let files = [];
+let ffmpegLoaded = false;
 
-// 自動DLONなら完了通知音無効
+const { createFFmpeg, fetchFile } = FFmpeg;
+const ffmpeg = createFFmpeg({ log:true });
+
+// 自動DL時は通知音OFF
 autoDL.addEventListener("change",()=>{
-    if(autoDL.checked){
-        notifySound.checked = false;
-        notifySound.disabled = true;
-    } else notifySound.disabled = false;
+  if(autoDL.checked){
+    notifySound.checked = false;
+    notifySound.disabled = true;
+  } else notifySound.disabled = false;
 });
 
 // ファイル選択
 input.addEventListener("change",()=>{
-    tableBody.innerHTML = "";
-    fileList = [];
-    let totalSize = 0;
+  tableBody.innerHTML = "";
+  files = [];
+  for(const file of input.files){
+    const ext = file.name.split(".").pop().toLowerCase();
+    if(!audioExt.includes(ext) && !videoExt.includes(ext) && !imageExt.includes(ext)) continue;
 
-    for(const file of input.files){
-        totalSize += file.size;
-        if(totalSize > MAX_SIZE){
-            alert("合計サイズが1GBを超えています！");
-            input.value = "";
-            return;
-        }
-
-        const ext = file.name.split(".").pop().toLowerCase();
-        let typeIcon = "";
-        if(audioExtensions.includes(ext)) typeIcon = "🎵";
-        else if(videoExtensions.includes(ext)) typeIcon = "🎬";
-        else if(imageExtensions.includes(ext)) typeIcon = "🖼️";
-        else continue;
-
-        const row = document.createElement("tr");
-        row.innerHTML = `
-            <td>${typeIcon}</td>
-            <td>${file.name}</td>
-            <td><div class="progress-bar" id="progress-${file.name.replace(/\W/g,'')}"></div></td>
-            <td>
-                <select>
-                    ${audioExtensions.includes(ext)?audioExtensions.map(f=>`<option>${f}</option>`).join(""):""}
-                    ${videoExtensions.includes(ext)?videoExtensions.map(f=>`<option>${f}</option>`).join(""):""}
-                    ${imageExtensions.includes(ext)?imageExtensions.map(f=>`<option>${f}</option>`).join(""):""}
-                </select>
-            </td>
-        `;
-        tableBody.appendChild(row);
-
-        fileList.push({file,row});
-    }
+    const row = document.createElement("tr");
+    row.innerHTML = `
+      <td>${audioExt.includes(ext)?"🎵":videoExt.includes(ext)?"🎬":"🖼️"}</td>
+      <td>${file.name}</td>
+      <td><div class="progress-bar" style="width:0%;height:10px;background:#4caf50;"></div></td>
+      <td>
+        <select>
+          ${audioExt.includes(ext)?audioExt.map(e=>`<option>${e}</option>`).join(""):""}
+          ${videoExt.includes(ext)?videoExt.map(e=>`<option>${e}</option>`).join(""):""}
+          ${imageExt.includes(ext)?imageExt.map(e=>`<option>${e}</option>`).join(""):""}
+        </select>
+      </td>
+    `;
+    tableBody.appendChild(row);
+    files.push({ file, row });
+  }
 });
 
-// 変換ボタン押下
-convertBtn.addEventListener("click",async()=>{
-    convertBtn.disabled = true;
-    convertBtn.textContent = "変換中...";
-    
-    for(const item of fileList){
-        const progress = item.row.querySelector(".progress-bar");
-        for(let i=0;i<=100;i+=10){
-            await new Promise(r=>setTimeout(r,100));
-            progress.style.width = i + "%";
-        }
-        // 仮想DL処理
-        if(zipDL.checked || autoDL.checked){
-            // ZIP生成や自動DL処理
-            dlDing.play(); // 自動DL用通知音
-        } else if(notifySound.checked){
-            ding.play();
-        }
-        // ボタン切替
-        item.row.querySelector("td:last-child").innerHTML = `<button>ダウンロード</button>`;
-    }
+// 単体変換
+async function convertFile(item){
+  const select = item.row.querySelector("select");
+  const outputExt = select.value;
+  const fileName = item.file.name;
+  const outputName = fileName.replace(/\.[^/.]+$/, "") + "." + outputExt;
 
-    convertBtn.disabled = false;
-    convertBtn.textContent = "変換";
+  if(!ffmpegLoaded){
+    await ffmpeg.load();
+    ffmpegLoaded = true;
+  }
+
+  ffmpeg.FS('writeFile', fileName, await fetchFile(item.file));
+
+  ffmpeg.setProgress(({ ratio })=>{
+    item.row.querySelector(".progress-bar").style.width = Math.floor(ratio*100)+"%";
+  });
+
+  try{
+    await ffmpeg.run('-i', fileName, outputName);
+    const data = ffmpeg.FS('readFile', outputName);
+    const url = URL.createObjectURL(new Blob([data.buffer]));
+
+    item.row.querySelector("td:last-child").innerHTML = `
+      <a href="${url}" download="${outputName}">⬇️ ダウンロード</a>
+    `;
+    if(autoDL.checked) dlDing.play();
+    else if(notifySound.checked) ding.play();
+  } catch(err){
+    item.row.querySelector("td:last-child").textContent = "変換エラー";
+    console.error(err);
+  }
+}
+
+// まとめ変換
+convertBtn.addEventListener("click", async () => {
+  convertBtn.disabled = true;
+  convertBtn.textContent = "変換中...";
+  for(const item of files){
+    await convertFile(item);
+  }
+
+  // ZIPまとめDL（オプション）
+  if(zipDL.checked && files.length>1){
+    const zip = new JSZip();
+    for(const item of files){
+      const select = item.row.querySelector("select");
+      const ext = select.value;
+      const fname = item.file.name.replace(/\.[^/.]+$/, "")+"."+ext;
+      const link = item.row.querySelector("a");
+      const blob = await (await fetch(link.href)).blob();
+      zip.file(fname, blob);
+    }
+    const zipBlob = await zip.generateAsync({type:"blob"});
+    const zipURL = URL.createObjectURL(zipBlob);
+    const a = document.createElement("a");
+    a.href = zipURL;
+    a.download = "converted_files.zip";
+    a.click();
+    dlDing.play();
+  }
+
+  convertBtn.disabled = false;
+  convertBtn.textContent = "変換完了";
 });
