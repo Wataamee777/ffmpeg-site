@@ -8,9 +8,9 @@ const ding = document.getElementById("ding");
 const dlDing = document.getElementById("dlDing");
 
 const MAX_SIZE = 1024*1024*1024; // 1GB
-const audioExtensions = ["mp3","wav","aac","ogg","flac","m4a"];
-const videoExtensions = ["mp4","mov","avi","mkv","webm"];
-const imageExtensions = ["jpg","jpeg","png","gif","webp"];
+const audioExtensions = ["mp3","aac","flac","wav","alac","wma","ogg","tta","tak"];
+const videoExtensions = ["mp4","mov","avi","mkv","webm","wmv","flv"];
+const imageExtensions = ["jpg","jpeg","png","gif","webp","bmp","tiff","ico","heic"];
 
 let fileList = [];
 
