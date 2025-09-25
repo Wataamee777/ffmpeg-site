@@ -1,0 +1,98 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+body {
+  font-family: 'Roboto', sans-serif;
+  background: linear-gradient(135deg, #1f1c2c, #928dab);
+  color: #fff;
+  margin: 0;
+  padding: 0;
+}
+
+.container {
+  max-width: 900px;
+  margin: 50px auto;
+  padding: 30px;
+  background: rgba(0,0,0,0.6);
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+h1 {
+  text-align: center;
+  font-size: 2.5em;
+  margin-bottom: 20px;
+  color: #ffd700;
+  text-shadow: 2px 2px 8px #000;
+}
+
+input[type="file"] {
+  display: block;
+  margin: 20px auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: rgba(255,255,255,0.1);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+th, td {
+  padding: 12px 15px;
+  text-align: left;
+}
+
+th {
+  background: rgba(255,255,255,0.2);
+}
+
+tbody tr {
+  transition: background 0.3s;
+}
+
+tbody tr:nth-child(odd) {
+  background: rgba(255,255,255,0.05);
+}
+
+.progress-bar {
+  width: 0;
+  height: 15px;
+  background: #76ff03;
+  border-radius: 10px;
+  transition: width 0.3s;
+}
+
+.controls {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 30px;
+}
+
+.settings label {
+  margin-right: 20px;
+}
+
+button {
+  background: linear-gradient(45deg, #ff6b6b, #f06595);
+  border: none;
+  padding: 15px 30px;
+  font-size: 1.1em;
+  font-weight: bold;
+  color: #fff;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+button:disabled {
+  background: #333;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.4);
+}
