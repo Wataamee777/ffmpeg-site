@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>ffmpeg変換サイト</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>FFmpeg変換サイト</h1>
+    <input type="file" id="fileInput" multiple>
+    <table id="fileTable">
+      <thead>
+        <tr>
+          <th>種類</th>
+          <th>ファイル名</th>
+          <th>アップロード状態</th>
+          <th>変換先</th>
+        </tr>
+      </thead>
+      <tbody>
+      </tbody>
+    </table>
+
+    <div class="controls">
+      <div class="settings">
+        <label><input type="checkbox" id="autoDL"> 自動DL</label>
+        <label><input type="checkbox" id="notifySound"> 完了通知音</label>
+        <label><input type="checkbox" id="zipDL"> ZIPDL</label>
+      </div>
+      <button id="convertBtn">変換</button>
+    </div>
+  </div>
+
+  <audio id="ding" src="assets/ding.mp3"></audio>
+  <audio id="dlDing" src="assets/dl-ding.mp3"></audio>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.0/jszip.min.js"></script>
+  <script src="script.js"></script>
+</body>
+</html>
